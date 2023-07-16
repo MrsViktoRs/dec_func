@@ -1,0 +1,70 @@
+import os
+import datetime
+
+
+def logger(old_function):
+    list_data = []
+
+    def new_function(*args, **kwargs):
+        result = old_function(*args, **kwargs)
+        time = datetime.datetime.now()
+        name_func = old_function.__name__
+        args_func = args, kwargs
+        data = str(time), str(result), str(name_func), str(args_func)
+        list_data.append(data)
+        write_file(str(list_data))
+        return result
+
+    return new_function
+
+
+def test_1():
+    path = 'main.log'
+    if os.path.exists(path):
+        os.remove(path)
+
+    @logger
+    def hello_world():
+        return 'Hello World'
+
+    @logger
+    def summator(a, b=0):
+        return a + b
+
+    @logger
+    def div(a, b):
+        return a / b
+
+    assert 'Hello World' == hello_world(), "Функция возвращает 'Hello World'"
+    result = summator(2, 2)
+    assert isinstance(result, int), 'Должно вернуться целое число'
+    assert result == 4, '2 + 2 = 4'
+    result = div(6, 2)
+    assert result == 3, '6 / 2 = 3'
+
+    assert os.path.exists(path), 'файл main.log должен существовать'
+
+    summator(4.3, b=2.2)
+    summator(a=0, b=0)
+
+    with open(path) as log_file:
+        log_file_content = log_file.read()
+
+    assert 'summator' in log_file_content, 'должно записаться имя функции'
+    for item in (4.3, 2.2, 6.5):
+        assert str(item) in log_file_content, f'{item} должен быть записан в файл'
+
+
+@logger
+def testing_logger(num, lod):
+    result = num * 2
+    return result
+
+
+def write_file(file):
+    with open('main.log', 'w+') as f:
+        f.write(file)
+
+
+if __name__ == '__main__':
+    print(test_1())
